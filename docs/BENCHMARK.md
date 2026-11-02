@@ -4,6 +4,26 @@ Measured 2026-11-01 / 02 on DeepSeek Harness 0.2.1-rc.5, Windows, `dsh headless`
 This document exists so the numbers in the main README have a stated method, a stated sample size,
 and a stated set of conditions under which they do **not** hold.
 
+## Cross-session survey (the reason the scope is stated this way)
+
+Before building, we analyzed 6 real agent sessions — 42 transcripts, 1,311 minutes, 2,517 tool
+calls, all subagent workloads on this machine:
+
+- Model streaming time: **87.2%** of the union critical path; tool execution windows: **22.1%**.
+- Bash is the dominant tool everywhere: 75.9–83.8% of calls per session.
+- **The model already batches through the shell**: 39.6% of bash commands contain ≥2 operations,
+  and 22–44% of commands carry shell loops. A tool-layer batch primitive largely duplicates what
+  the model already does.
+- Same-message multi-calls exist (25.7% of turns) but 87.7% of them run serialized — and their
+  total span is only 26.8 min across all sessions, bounding the concurrency win at **1.9%**.
+- WebFetch failed 14/14 in one session (proxy), which forced the agent to hand-roll `node fetch.mjs`
+  and run 64 single-URL rounds — a batch-fetch tool would have helped there, but that is a
+  network-egress problem, not a missing-tool problem.
+
+Consequence for this plugin: the capabilities target **repeat calls, prefetchable reads, and
+serial readonly shell commands** — not a general "make agents fast" claim. The model round trips
+that dominate wall time are out of scope for any tool-layer plugin.
+
 ## Setup
 
 Every cell is the same five-task fixture, run three times, wall time measured from process spawn to
