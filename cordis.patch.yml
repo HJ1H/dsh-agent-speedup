@@ -1,0 +1,15 @@
+# dsh-agent-speedup 默认挂载
+#
+# 默认值策略（依据 docs/BENCHMARK.md 实测）：
+#   cache/speculate 开启 —— 有实测收益（重复读 -46%，预取 4/4 命中）
+#   shellConcurrency 关闭 —— 判定错误会导致并发副作用，须用户显式开启并理解风险
+- insert:
+    - id: agent-speedup
+      name: dsh-agent-speedup
+      config:
+        cache: true
+        speculate: true
+        prefetchN: 3
+        speculateOn: [glob]
+        shellConcurrency: false
+        shellTools: [bash, pwsh]
