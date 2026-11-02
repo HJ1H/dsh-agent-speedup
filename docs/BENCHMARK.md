@@ -66,9 +66,14 @@ Mechanism-level confirmation, independent of wall time:
 - T5: prefetch launched 4 of 4 files and the model's subsequent four reads all hit
   (`speculative: true`), with zero prefetch failures.
 
-A later run of the same suite after the plugin was refactored for release reproduced the mechanism
-(per-call tool time −49.7% on T4, −79.4% on T5) but a smaller wall-time delta (−7.4% and −17.5%),
-which is consistent with model-side variance at this sample size.
+Two follow-up regression runs, with the plugin versions they belong to (kept separate because the
+numbers are not interchangeable):
+
+- **0.1.x plugin** (−49.7% per-call tool time on T4, −79.4% on T5; wall −7.4% and −17.5%): measured
+  before the suite rewrite. Wall deltas at this sample size were dominated by model-side variance.
+- **0.2.0 release candidate** (this package): T4 wall −14.7%, T5 wall −10.5%, ledger showing
+  14 cache hits and 28.1 s of instrumented execution avoided across 6 runs. Confirms the mechanism
+  survived the rewrite; the wall deltas differ from 0.1.x within model-side variance.
 
 ## Two results that argue against the plugin
 

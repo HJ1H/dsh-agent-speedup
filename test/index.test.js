@@ -112,11 +112,18 @@ describe("插件契约", () => {
 
 describe("缓存语义", () => {
   test("同一只读工具第二次调用不再真实 dispatch", async () => {
-    const ctx = makeCtx();
-    apply(ctx, cfgOf({}));
-    const exec = { name: "read", arguments: { file_path: "x.js" } };
-    assert.equal((await ctx.fire("tools/execute", exec)).nextCalls, 1);
-    assert.equal((await ctx.fire("tools/execute", exec)).nextCalls, 0, "第二次应命中缓存");
+    const dir = mkdtempSync(join(tmpdir(), "dsh-sched-"));
+    const file = join(dir, "x.js");
+    try {
+      writeFileSync(file, "content");
+      const ctx = makeCtx();
+      apply(ctx, cfgOf({}));
+      const exec = { name: "read", arguments: { file_path: file } };
+      assert.equal((await ctx.fire("tools/execute", exec)).nextCalls, 1);
+      assert.equal((await ctx.fire("tools/execute", exec)).nextCalls, 0, "第二次应命中缓存");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   test("副作用工具（write/bash/pwsh/edit）永不缓存", async () => {
@@ -170,11 +177,47 @@ describe("缓存语义", () => {
       const exec = { name: "read", arguments: { file_path: file } };
       await ctx.fire("tools/execute", exec);
       assert.equal((await ctx.fire("tools/execute", exec)).nextCalls, 0);
-      await ctx.fire("fs/write-intent", { targetKey: file });
+      // fs/write-intent 是 waterfall：监听器签名 (target, exec, next)
+      await ctx.fire("fs/write-intent", { targetKey: file }, {});
       assert.equal((await ctx.fire("tools/execute", exec)).nextCalls, 1, "写意图后应失效");
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  test("无 file_path 的 volatile 条目（glob/grep）在写意图后失效（R1a Issue 1 回归）", async () => {
+    const ctx = makeCtx();
+    apply(ctx, cfgOf({ validateStat: false }));
+    const globExec = { name: "glob", arguments: { pattern: "**/*.ts" } };
+    await ctx.fire("tools/execute", globExec);
+    assert.equal((await ctx.fire("tools/execute", globExec)).nextCalls, 0, "无写入时应命中");
+    // 任何写意图 → volatile 条目整体清空（glob 结果的正确性依赖目录内容未变，无法单文件校验）
+    await ctx.fire("fs/write-intent", { targetKey: "somewhere/new.ts" }, {});
+    assert.equal((await ctx.fire("tools/execute", globExec)).nextCalls, 1, "写意图后 glob 条目应失效");
+  });
+
+  test("shell 调用后 volatile 条目失效（bash/pwsh 写入不发 fs 事件的兜底）", async () => {
+    const ctx = makeCtx();
+    apply(ctx, cfgOf({}));
+    const globExec = { name: "glob", arguments: { pattern: "**/*.ts" } };
+    await ctx.fire("tools/execute", globExec);
+    assert.equal((await ctx.fire("tools/execute", globExec)).nextCalls, 0);
+    // shell 调用（可能写了文件且不发事件）→ glob 条目不可信
+    await ctx.fire("tools/post-execute", { name: "pwsh" }, { content: [] });
+    assert.equal((await ctx.fire("tools/execute", globExec)).nextCalls, 1, "shell 调用后 glob 条目应失效");
+  });
+
+  test("grep 的 pattern 参数不做路径归一（R1a Issue 2 回归：正则语义不被路径化破坏）", async () => {
+    const ctx = makeCtx();
+    apply(ctx, cfgOf({}));
+    const a = { name: "grep", arguments: { pattern: "a\\db", path: "src" } };
+    const b = { name: "grep", arguments: { pattern: "a/db", path: "src" } };
+    await ctx.fire("tools/execute", a);
+    // b 的 pattern 与 a 语义不同（正则 a\db ≠ a/db），必须各自 miss 而非假命中
+    assert.equal((await ctx.fire("tools/execute", b)).nextCalls, 1, "不同正则不应共享缓存键");
+    // path 参数仍归一：同文件不同分隔符命中
+    const c = { name: "grep", arguments: { pattern: "a\\db", path: "src" } };
+    assert.equal((await ctx.fire("tools/execute", c)).nextCalls, 0);
   });
 
   test("cache=false 时完全不缓存", async () => {
@@ -186,11 +229,18 @@ describe("缓存语义", () => {
   });
 
   test("自定义 readonlyTools 白名单生效", async () => {
-    const ctx = makeCtx();
-    apply(ctx, cfgOf({ readonlyTools: ["slow_read"] }));
-    const exec = { name: "slow_read", arguments: { file_path: "z.js" } };
-    await ctx.fire("tools/execute", exec);
-    assert.equal((await ctx.fire("tools/execute", exec)).nextCalls, 0);
+    const dir = mkdtempSync(join(tmpdir(), "dsh-sched-"));
+    const file = join(dir, "z.dat");
+    try {
+      writeFileSync(file, "data");
+      const ctx = makeCtx();
+      apply(ctx, cfgOf({ readonlyTools: ["slow_read"] }));
+      const exec = { name: "slow_read", arguments: { file_path: file } };
+      await ctx.fire("tools/execute", exec);
+      assert.equal((await ctx.fire("tools/execute", exec)).nextCalls, 0);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 
