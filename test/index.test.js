@@ -68,6 +68,19 @@ describe("纯函数", () => {
     assert.equal(keyOf("read", { file_path: rel }), keyOf("read", { file_path: abs }));
   });
 
+  test("keyOf 跨平台分隔符归一（POSIX CI 上曾是唯一失败项）", () => {
+    // Windows 风格的相对路径出现在 POSIX 上：`bench\fixture\a.js` 是单个文件名，
+    // 直接 resolve 会得到完全不同的键。必须先把反斜杠归一。
+    const bs = "bench\\fixture\\a.js";
+    const fwd = "bench/fixture/a.js";
+    assert.equal(keyOf("read", { file_path: bs }), keyOf("read", { file_path: fwd }), "混合分隔符必须同键");
+    // 绝对路径同理
+    assert.equal(
+      keyOf("read", { file_path: join(process.cwd(), "bench\\fixture\\a.js") }),
+      keyOf("read", { file_path: join(process.cwd(), "bench/fixture/a.js") }),
+    );
+  });
+
   test("keyOf 参数键序无关", () => {
     assert.equal(keyOf("read", { a: "1", b: "2" }), keyOf("read", { b: "2", a: "1" }));
   });
