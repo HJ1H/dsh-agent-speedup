@@ -242,6 +242,88 @@ describe("缓存语义", () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  test("缓存按 agent 的 session 工作目录解析相对路径（cwd 边界回归）", async () => {
+    // 模拟 dsh：agent 已 cd 到 dirA，而进程 cwd 不同。
+    // 同一个相对名 "a.js" 在 dirA 与 dirB 下是两个不同文件，绝不能共享缓存键。
+    const dirA = mkdtempSync(join(tmpdir(), "dsh-cwd-a-"));
+    const dirB = mkdtempSync(join(tmpdir(), "dsh-cwd-b-"));
+    try {
+      writeFileSync(join(dirA, "a.js"), "from-A");
+      writeFileSync(join(dirB, "a.js"), "from-B-different");
+      const ctx = makeCtx();
+      const cwdOf = new Map();
+      ctx.get = (svc) => (svc === "workingDirectory"
+        ? { get: (session) => cwdOf.get(session) ?? process.cwd() }
+        : undefined);
+      apply(ctx, cfgOf({}));
+
+      const agentA = { session: { id: "sess-A" } };
+      const agentB = { session: { id: "sess-B" } };
+      cwdOf.set(agentA.session, dirA);
+      cwdOf.set(agentB.session, dirB);
+
+      const callA = await ctx.fire("tools/execute", { name: "read", arguments: { file_path: "a.js" }, agent: agentA });
+      assert.equal(callA.nextCalls, 1, "首个调用应 dispatch");
+      const callA2 = await ctx.fire("tools/execute", { name: "read", arguments: { file_path: "a.js" }, agent: agentA });
+      assert.equal(callA2.nextCalls, 0, "同 session 同文件应命中");
+
+      const callB = await ctx.fire("tools/execute", { name: "read", arguments: { file_path: "a.js" }, agent: agentB });
+      assert.equal(callB.nextCalls, 1, "不同 session 工作目录下的同名文件必须 miss");
+      assert.notEqual(callB.result, callA.result, "不得返回另一目录的内容");
+    } finally {
+      rmSync(dirA, { recursive: true, force: true });
+      rmSync(dirB, { recursive: true, force: true });
+    }
+  });
+
+  test("LRU 上限：条目数不超过 maxEntries，且命中会把条目提为最近使用", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "dsh-lru-"));
+    try {
+      const files = ["a.js", "b.js", "c.js"];
+      for (const f of files) writeFileSync(join(dir, f), f);
+      const ctx = makeCtx();
+      apply(ctx, cfgOf({ maxEntries: 2, validateStat: false }));
+      const execOf = (f) => ({ name: "read", arguments: { file_path: join(dir, f) } });
+
+      await ctx.fire("tools/execute", execOf("a.js"));
+      await ctx.fire("tools/execute", execOf("b.js"));
+      // 访问 a → a 成为最近使用，b 成为最旧
+      assert.equal((await ctx.fire("tools/execute", execOf("a.js"))).nextCalls, 0);
+      // 插入 c 触发淘汰：挤出最旧的 b，保留 a
+      await ctx.fire("tools/execute", execOf("c.js"));
+      assert.equal((await ctx.fire("tools/execute", execOf("a.js"))).nextCalls, 0, "a 被命中提升后不应被淘汰");
+      assert.equal((await ctx.fire("tools/execute", execOf("b.js"))).nextCalls, 1, "b 应已被淘汰");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("读取窗口内文件变化时不缓存结果（TOCTOU 回归）", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "dsh-toctou-"));
+    const file = join(dir, "t.js");
+    try {
+      writeFileSync(file, "v1");
+      const ctx = makeCtx();
+      const execHandlers = [];
+      const rawOn = ctx.on;
+      ctx.on = (ev, fn) => { if (ev === "tools/execute") execHandlers.push(fn); else rawOn.call(ctx, ev, fn); };
+      apply(ctx, cfgOf({ validateStat: true }));
+      const h = execHandlers[0];
+      const exec = { name: "read", arguments: { file_path: file } };
+      let calls = 0;
+      // 第一次 dispatch 期间发生写入（模拟并发行写）：返回值是写入前的内容
+      await h(exec, async () => { calls++; writeFileSync(file, "v2-mutated"); return { content: [{ type: "text", text: "v1" }] }; });
+      // 若该不稳定结果被缓存，第二次就不会 dispatch —— 断言它必须重新 dispatch
+      await h(exec, async () => { calls++; return { content: [{ type: "text", text: "v2-mutated" }] }; });
+      assert.equal(calls, 2, "读窗口内变化的结果不应被缓存");
+      // 第二次读取窗口内无变化 → 这次应当入缓存
+      await h(exec, async () => { calls++; return { content: [{ type: "text", text: "stable" }] }; });
+      assert.equal(calls, 2, "稳定读取应命中缓存");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("推测预取", () => {

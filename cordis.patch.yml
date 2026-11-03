@@ -3,13 +3,19 @@
 # 默认值策略（依据 docs/BENCHMARK.md 实测）：
 #   cache/speculate 开启 —— 有实测收益（重复读 -46%，预取 4/4 命中）
 #   shellConcurrency 关闭 —— 判定错误会导致并发副作用，须用户显式开启并理解风险
+#
+# 注意：同 id 的 patch 条目会整体替换 config（不合并）。
 - insert:
     - id: agent-speedup
       name: dsh-agent-speedup
       config:
         cache: true
+        readonlyTools: []
+        validateStat: true
+        maxEntries: 512
         speculate: true
         prefetchN: 3
         speculateOn: [glob]
+        speculateRootPrefix: ""
         shellConcurrency: false
         shellTools: [bash, pwsh]

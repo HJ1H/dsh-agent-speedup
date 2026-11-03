@@ -20,7 +20,7 @@ Within that 22%, three different problems exist, and each capability targets one
 | Capability | Problem it solves | Measured |
 |---|---|---|
 | **Cache** | Same read-only call repeated | wall **−13.5%** (T4) and **−10.5%** (T5), release build; an earlier calibration on the same task shape measured **−46%** |
-| **Prefetch** | Files the model will ask for right after a `glob` | 12/12 prefetch calls completed, results served from cache on the model's next reads (ledger: 14 hits, 28.1 s of instrumented execution avoided across 6 runs) |
+| **Prefetch** | Files the model will ask for right after a `glob` | 4/4 files launched per trigger, the model's following reads served from cache (ledger: 14 hits, 28.1 s of instrumented execution avoided across 6 runs) |
 | **Shell concurrency** | Multiple readonly shell commands serialized | 4 pwsh calls: **7,103 ms serialized → 317 ms concurrent (22×)**, identical task and model |
 
 And two things it deliberately does not fix: on local millisecond-scale tools the plugin is
@@ -61,12 +61,17 @@ Entries carry a stat fingerprint (`size` + `mtimeMs`) checked on every hit, so a
 any means invalidates — including `bash`/`pwsh` writes, which emit no filesystem events.
 `fs/write-intent` and `fs/edit-intent` add immediate invalidation for the editor path.
 
+Relative paths resolve against the **agent's session working directory**, the same base dsh's own
+`read` uses, so an agent that `cd`s elsewhere cannot collide with a same-named file elsewhere.
+The cache is an LRU bounded by `maxEntries` (default 512) and a result whose file changed *during*
+the read is not stored.
+
 ### Prefetch
 
 When a `glob` result comes back, the plugin pre-executes the same-family read tool for the first N
 paths, in the background. Those results land in the same cache, so when the model actually asks,
-nothing runs. Prefetch calls go through the ordinary pipeline, so guard denials and errors are
-handled identically.
+nothing runs. Prefetch calls go through the ordinary pipeline — same agent context, same working
+directory, same guards — so denials and errors are handled identically.
 
 ### Shell concurrency
 
@@ -83,15 +88,32 @@ the same time. Enable it only if you accept that risk:
 - id: agent-speedup
   config:
     cache: true            # repeat everything below — replace semantics!
+    readonlyTools: []
+    validateStat: true
+    maxEntries: 512
     speculate: true
     prefetchN: 3
     speculateOn: [glob]
+    speculateRootPrefix: ""
     shellConcurrency: true
     shellTools: [bash, pwsh]
 ```
 
 The classifier is deliberately strict: `npm test`, `cargo build`, `python script.py` are all treated
 as side-effecting (they may write), and unknown commands are rejected rather than guessed.
+Subcommands are handled per verb, not per program name — `git branch` (list) is readonly while
+`git branch new` (create) is not; `git remote` lists but `git remote add` rewrites config; `find`
+allows `-print` but not `-fprint`/`-exec`/`-delete`; `file -C`, `tree -o`, `date -s` are rejected.
+
+Four classes are rejected outright because their effect is only known at run time: command
+substitution (`$(...)`, backticks), `${VAR}` expansion, escaped shell metacharacters, and
+`NAME=value cmd` prefixes (`GIT_EXTERNAL_DIFF`, `LD_PRELOAD`, `NODE_OPTIONS` all let a "readonly"
+command run arbitrary code). PowerShell script blocks (`{ ... }`, which `Where-Object` /
+`ForEach-Object` execute) are also rejected. A bare `&` splits the command line like `;` — an
+attacker cannot hide a writer behind a background job.
+
+An adversarial review of this classifier is part of the release process; the escapes it found in
+0.2.2 are each covered by a regression test (see `test/classify-command.test.js`, `R2` suites).
 
 ## Configuration
 
@@ -102,6 +124,7 @@ All keys with zod defaults; a patch override replaces the whole object.
 | `cache` | `true` | Read-only result cache |
 | `readonlyTools` | `[]` | Extra tool names to cache |
 | `validateStat` | `true` | Stat fingerprint check on every hit |
+| `maxEntries` | `512` | LRU cap on cached results (1–100000) |
 | `speculate` | `true` | Speculative prefetch |
 | `speculateOn` | `["glob"]` | Tools whose results trigger prefetch |
 | `prefetchN` | `3` | Max files per prefetch (1–64) |
@@ -116,16 +139,15 @@ Read-only tools only. `bash`, `pwsh`, `write` and `edit` are passed through unto
 cached or prefetched. Error results, including guard denials, are not remembered. Cache and
 in-flight prefetches are cleared when the plugin unloads (in-flight prefetch aborts included).
 
-Two known boundaries, found in independent review:
+One known boundary, found in independent review:
 
-- **Working-directory assumption.** Cache keys and stat checks resolve relative paths against the
-  process working directory, while dsh's `read` resolves against the agent's working directory. In
-  headless mode (one process per workspace) these coincide. If an agent `cd`s elsewhere, entries
-  whose file cannot be stat'd are simply not cached (fail-safe), but same-named files across
-  different agent working directories are not disambiguated.
 - **Cache hits short-circuit the waterfall.** A hit returns without calling `next()`, which also
   skips `tools/execute` listeners registered by plugins loaded after this one. If you run other
   execute-stage plugins, load them before this one.
+
+The working-directory boundary from 0.2.1 is **fixed** in 0.2.2: keys and stat checks now use
+`workingDirectory` (the agent's session directory), with a process-`cwd` fallback only when that
+service is not mounted. If the fingerprint cannot be taken at all, the entry is simply not cached.
 
 ## 中文
 
@@ -136,6 +158,10 @@ Two known boundaries, found in independent review:
 - **只读 shell 并发**：dsh 原生会把 shell 命令串行（实测 4 条毫秒级命令串行 7.1 秒，
   开启后 317 毫秒完成，22 倍），本插件给只读命令打上并发标记，
   让它们进入 dsh 原生并行批（默认关闭，需显式开启）
+- **判定粒度**：按子命令和参数判定，不按程序名放行——`git branch`（列举）只读、
+  `git branch new`（创建）不是；`find -print` 放行、`-fprint/-exec/-delete` 拒绝。
+  命令替换、`${VAR}`、转义元字符、`NAME=value cmd` 赋值前缀、PowerShell 脚本块
+  一律拒绝（它们的实际行为要到运行时才知道）
 
 前提要清楚：模型延迟占关键路径的 87%，工具占 22%。本地毫秒级工具上这个插件无感；
 收益集中在"慢工具 + 重复调用"场景。数字、方法和反面结果在
