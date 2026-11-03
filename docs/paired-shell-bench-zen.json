@@ -1,0 +1,408 @@
+{
+ "task": "T6-shell-batch",
+ "provider": "zen",
+ "rounds": 6,
+ "arm": {
+  "off": "./patch-shell-off.yml",
+  "on": "./patch-shell-on.yml"
+ },
+ "generatedAt": "2026-11-03T15:09:02.572Z",
+ "records": [
+  {
+   "mode": "off",
+   "wallMs": 27019,
+   "toolTotalMs": 10233,
+   "toolSpanMs": 10233,
+   "maxBatch": 1,
+   "pass": true,
+   "exitCode": 1,
+   "calls": [
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2711
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2539
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2471
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2512
+    }
+   ],
+   "stderrTail": "web-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)\ndsh: INVALID_REQUEST: 400: {\"message\":\"safety check failed\",\"type\":\"failed_precondition_error\",\"code\":\"9\"}",
+   "round": 1
+  },
+  {
+   "mode": "on",
+   "wallMs": 21939,
+   "toolTotalMs": 12185,
+   "toolSpanMs": 3191,
+   "maxBatch": 4,
+   "pass": true,
+   "exitCode": 1,
+   "calls": [
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2870
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 3051
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 3079
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 3185
+    }
+   ],
+   "stderrTail": "web-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)\ndsh: INVALID_REQUEST: 400: {\"message\":\"safety check failed\",\"type\":\"failed_precondition_error\",\"code\":\"9\"}",
+   "round": 1
+  },
+  {
+   "mode": "off",
+   "wallMs": 17670,
+   "toolTotalMs": 9828,
+   "toolSpanMs": 9828,
+   "maxBatch": 1,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2306
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2439
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2517
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2566
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 2
+  },
+  {
+   "mode": "on",
+   "wallMs": 16047,
+   "toolTotalMs": 12606,
+   "toolSpanMs": 3296,
+   "maxBatch": 4,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2958
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 3155
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 3201
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 3292
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 2
+  },
+  {
+   "mode": "off",
+   "wallMs": 17491,
+   "toolTotalMs": 9240,
+   "toolSpanMs": 9241,
+   "maxBatch": 1,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2216
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2258
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2307
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2459
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 3
+  },
+  {
+   "mode": "on",
+   "wallMs": 22547,
+   "toolTotalMs": 12008,
+   "toolSpanMs": 3147,
+   "maxBatch": 4,
+   "pass": true,
+   "exitCode": 1,
+   "calls": [
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2826
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 3020
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 3019
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 3143
+    }
+   ],
+   "stderrTail": "web-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)\ndsh: INVALID_REQUEST: 400: {\"message\":\"safety check failed\",\"type\":\"failed_precondition_error\",\"code\":\"9\"}",
+   "round": 3
+  },
+  {
+   "mode": "off",
+   "wallMs": 21585,
+   "toolTotalMs": 9899,
+   "toolSpanMs": 9900,
+   "maxBatch": 1,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2290
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2620
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2474
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2515
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 4
+  },
+  {
+   "mode": "on",
+   "wallMs": 13474,
+   "toolTotalMs": 12444,
+   "toolSpanMs": 3219,
+   "maxBatch": 4,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2943
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 3121
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 3167
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 3213
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 4
+  },
+  {
+   "mode": "off",
+   "wallMs": 21415,
+   "toolTotalMs": 9486,
+   "toolSpanMs": 9488,
+   "maxBatch": 1,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2288
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2347
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2408
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2443
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 5
+  },
+  {
+   "mode": "on",
+   "wallMs": 13565,
+   "toolTotalMs": 11828,
+   "toolSpanMs": 3077,
+   "maxBatch": 4,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2789
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2983
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2984
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 3072
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 5
+  },
+  {
+   "mode": "off",
+   "wallMs": 22592,
+   "toolTotalMs": 8985,
+   "toolSpanMs": 8986,
+   "maxBatch": 1,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2203
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2208
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2210
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2364
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 6
+  },
+  {
+   "mode": "on",
+   "wallMs": 15255,
+   "toolTotalMs": 11855,
+   "toolSpanMs": 3084,
+   "maxBatch": 4,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2794
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2990
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 2990
+    },
+    {
+     "tool": "pwsh",
+     "file": "",
+     "ms": 3081
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 6
+  }
+ ]
+}

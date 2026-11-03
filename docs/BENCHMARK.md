@@ -281,3 +281,30 @@ the free-tier API could not run it:
 **Model availability at the time of writing**: `sensenova-6.8-flash` works (1.2–2.4 s, 4 concurrent
 OK); `deepseek-v4-flash` returned 429 (TPM/RPM) and `deepseek-v4.1-flash` returned 403 (not in
 plan). SWE-bench needs a stronger, rate-limit-free model before it can be used here.
+
+### Cross-model replication: `deepseek-v4.1-flash` (zen, paid tier)
+
+The T6 scheduling result was re-measured on a much stronger model to check it was not an artifact of
+the small free-tier model. 6 rounds, same isolated config (`cache: false, speculate: false`):
+
+| Metric | Off | On | Δ |
+|---|---|---|---|
+| **Tool window span** | 9.61 s ± 0.46 | **3.17 s ± 0.08** | **−67.0%** |
+| Wall time | 21.30 s ± 3.53 | 17.14 s ± 4.08 | −19.5% |
+| Max concurrent batch | 1 | 4 | — |
+| Task success | 6 / 6 | 6 / 6 | — |
+
+Paired span difference: **−6.44 s, 95% CI [−6.87, −6.01]**, all 6 negative (Cohen's d = −15.7).
+Raw data: [paired-shell-bench-zen.json](paired-shell-bench-zen.json).
+
+**Why this matters more than the absolute number.** The free-tier model
+(`sensenova-6.8-flash`) gave −66.3% on the same task; this paid model gives −67.0%. Two models with
+very different capabilities produce the same effect, which is what you would expect if the gain
+comes from scheduling rather than from model behaviour. It also rules out "the small model was just
+slow to begin with".
+
+**Caveat found during this run.** Two of eight early attempts died with `400 safety check failed`
+from the provider, mid-session. The same prompts pass in isolation, so it appears to be
+context-accumulation in long tool-heavy sessions rather than anything the plugin does. Retries
+recovered; the 6 reported rounds are all clean runs. Worth knowing that a long shell-heavy session
+can be interrupted by the provider regardless of this plugin.
