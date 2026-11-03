@@ -137,4 +137,39 @@ as read-only would be unsafe — but it is the first thing to check if the ledge
 [PASTE](https://arxiv.org/abs/2603.18897) ·
 [TomasuLLM](https://arxiv.org/abs/2609.38201) ·
 [SPAgent](https://arxiv.org/abs/2511.20048) ·
-[LLMCompiler](https://arxiv.org/abs/2312.04511)
+[LLMCompiler](https://arxiv.org/abs/2312.04511) ·
+[HarnessMM](https://arxiv.org/abs/2610.32813)
+
+### HarnessMM (arXiv 2610.32813) — closest neighbour, different layer
+
+HarnessMM targets **DeepSeek Harness v0.2.0-rc.1**, the same harness this plugin is built for, so the
+comparison deserves to be explicit.
+
+It removes *model reasoning calls*. An authored Executable Decision Graph stores an action with literal
+arguments and a public guard; when a tool receipt satisfies the guard, the decision executes through
+the native tool interface and the redundant reasoning callback is skipped, certified by a record that
+binds graph hash, decision id, exact args, tool receipt and the omitted callback id.
+
+This plugin removes *tool executions*. It caches repeat read-only results, merges identical in-flight
+calls, prefetches files a `glob` just named, and lets readonly shell commands join dsh's parallel
+batch. Model reasoning is never touched — a cache hit replaces the tool call, not the thought that
+requested it.
+
+The two compose, and the ordering matters: HarnessMM's decision graphs still name tool calls, and a
+cached result makes such a call cheaper but does not remove it. Conversely, this plugin cannot save a
+single model call. On the paper's own accounting, DeepSeek Harness spends 96.28k tokens/task against
+53.98k for MBPP — token cost is dominated by reasoning, not tool execution, which is why their
+savings (up to 87.9%) are far larger than anything measurable here.
+
+**One real overlap.** The paper's `Certified Callback Substitution` needs to know that a tool call
+completed with a specific receipt. Our prefetch produces results whose consumption is invisible to
+the model, and our cache hit bypasses the tool entirely. If both were installed, a HarnessMM guard
+reading "the previous compile succeeded" would still work (we never touch shell state), but a guard
+depending on a *read* receipt could observe a cache-served result whose execution never happened.
+This is not exploitable in the sense of wrong results — the cached bytes are the correct bytes — but
+it changes what a substitution certificate can claim about physical execution.
+
+**What we deliberately do not claim.** HarnessMM measures complete-episode cost including authorship,
+selector, fallback and recovery. Our ledger measures avoided instrumented execution time and cache
+hit counts; we do not price our own overhead the same way, so the two efficiency figures are not
+comparable and this document does not compare them.

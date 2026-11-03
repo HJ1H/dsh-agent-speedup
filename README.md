@@ -29,6 +29,13 @@ invisible (tools were 0.1–9.4% of wall in our runs), and DeepSeek Harness alre
 concurrency-safe tools — in our baseline 7 tool calls (6 reads + 1 shell) were dispatched within
 19 ms with no plugin installed, and 5 adjacent tool results landed within 100 ms of each other.
 
+**Different layer from HarnessMM.** [HarnessMM](https://arxiv.org/abs/2610.32813) also targets
+DeepSeek Harness, but it removes *model reasoning calls* by replaying guarded decisions; this plugin
+removes *tool executions* and never touches reasoning. They compose — a decision graph still names
+tool calls, and a cache hit makes those calls cheaper. See
+[docs/BENCHMARK.md](docs/BENCHMARK.md#harnessmm-arxiv-261032813--closest-neighbour-different-layer)
+for the accounting caveat if both are installed.
+
 Full method, sample sizes, and the findings that argue against this plugin:
 [docs/BENCHMARK.md](docs/BENCHMARK.md).
 

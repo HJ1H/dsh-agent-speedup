@@ -9,6 +9,7 @@
       "types": "./lib/index.d.ts",
       "default": "./lib/index.js"
     },
+    "./classify-command": "./lib/util/classify-command.js",
     "./package.json": "./package.json",
     "./cordis.patch.yml": "./cordis.patch.yml"
   },
