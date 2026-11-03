@@ -380,4 +380,31 @@ Two things made this easy to get wrong, both worth remembering:
    tests replaced `ctx.tools.execute` with a plain stub, so the re-entry never happened. The
    replacement test lets the stub call the real handler, and is verified to fail without the fix.
 
+### T8: a realistic exploration task where the plugin loses on wall time
+
+T8 is the closest thing here to a real agent workflow: `glob`, read all four files, read
+`package.json`, summarize. 4 paired rounds on `deepseek-v4.1-flash`:
+
+| Metric | Off | On | Δ |
+|---|---|---|---|
+| Tool total | 12.63 s ± 0.98 | **4.10 s ± 0.01** | **−67.5%** |
+| Cache hits | 5 / 30 (16.7%) | 24 / 32 (75.0%) | — |
+| Tool window span | 14.16 s ± 3.51 | 17.30 s ± 3.88 | **+22.2%** |
+| **Wall time** | 27.41 s ± 4.97 | 37.00 s ± 10.97 | **+35.0%** |
+| Task success | 4 / 4 | 4 / 4 | — |
+
+Paired tool-total difference: −8.53 s, 95% CI [−10.09, −6.96], all 4 negative. Paired wall
+difference: +9.59 s, 95% CI [−13.98, +33.17] — positive on average, but the interval crosses zero,
+so with 4 rounds this is not a resolved regression either.
+
+**What actually happened.** The on-arm model took *more conversational turns* in three of four
+rounds (it re-`glob`bed, probed, and re-read). Each extra turn costs a full model round trip, which
+is 1–3 s on this provider — far more than the ~8 s of tool time saved. The plugin removed the tool
+cost and the model spent the savings on more thinking.
+
+This is the honest boundary of the whole project, and it is the reason the promotional material only
+claims tool-time reduction: **on a task where the model wanders, saving tool time does not make the
+task finish sooner.** T8 is kept in the repo as the counter-example rather than dropped.
+
+
 

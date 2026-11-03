@@ -1,0 +1,426 @@
+{
+ "task": "T8-code-hunt",
+ "provider": "zen",
+ "rounds": 4,
+ "arm": {
+  "off": "./patch-speedup-demo-off.yml",
+  "on": "./patch-speedup-demo-on.yml"
+ },
+ "generatedAt": "2026-11-03T16:08:48.507Z",
+ "records": [
+  {
+   "mode": "off",
+   "wallMs": 22619,
+   "toolTotalMs": 12200,
+   "toolSpanMs": 10849,
+   "maxBatch": 5,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "glob",
+     "file": "*.js",
+     "ms": 2
+    },
+    {
+     "tool": "slow_glob",
+     "file": "src|.js",
+     "ms": 2019
+    },
+    {
+     "tool": "slow_read",
+     "file": "add.js",
+     "ms": 2036
+    },
+    {
+     "tool": "slow_read",
+     "file": "mul.js",
+     "ms": 2035
+    },
+    {
+     "tool": "slow_read",
+     "file": "sub.js",
+     "ms": 2035
+    },
+    {
+     "tool": "slow_read",
+     "file": "format.js",
+     "ms": 2036
+    },
+    {
+     "tool": "slow_read",
+     "file": "package.json",
+     "ms": 2037
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 1
+  },
+  {
+   "mode": "on",
+   "wallMs": 35178,
+   "toolTotalMs": 4104,
+   "toolSpanMs": 19949,
+   "maxBatch": 4,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "glob",
+     "file": "*.js",
+     "ms": 5
+    },
+    {
+     "tool": "slow_glob",
+     "file": "src|.js",
+     "ms": 2021
+    },
+    {
+     "tool": "slow_read",
+     "file": "add.js",
+     "ms": 14
+    },
+    {
+     "tool": "slow_read",
+     "file": "mul.js",
+     "ms": 14
+    },
+    {
+     "tool": "slow_read",
+     "file": "sub.js",
+     "ms": 13
+    },
+    {
+     "tool": "slow_read",
+     "file": "format.js",
+     "ms": 14
+    },
+    {
+     "tool": "slow_read",
+     "file": "package.json",
+     "ms": 2023
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 1
+  },
+  {
+   "mode": "off",
+   "wallMs": 24938,
+   "toolTotalMs": 14095,
+   "toolSpanMs": 14840,
+   "maxBatch": 4,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "glob",
+     "file": "*.js",
+     "ms": 2
+    },
+    {
+     "tool": "read",
+     "file": "package.json",
+     "ms": 1
+    },
+    {
+     "tool": "slow_glob",
+     "file": "src|.js",
+     "ms": 2011
+    },
+    {
+     "tool": "slow_read",
+     "file": "package.json",
+     "ms": 2009
+    },
+    {
+     "tool": "slow_read",
+     "file": "add.js",
+     "ms": 2017
+    },
+    {
+     "tool": "slow_read",
+     "file": "mul.js",
+     "ms": 2016
+    },
+    {
+     "tool": "slow_read",
+     "file": "sub.js",
+     "ms": 2016
+    },
+    {
+     "tool": "slow_read",
+     "file": "format.js",
+     "ms": 2016
+    },
+    {
+     "tool": "slow_read",
+     "file": "package.json",
+     "ms": 2007
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 2
+  },
+  {
+   "mode": "on",
+   "wallMs": 50633,
+   "toolTotalMs": 4092,
+   "toolSpanMs": 14782,
+   "maxBatch": 5,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "glob",
+     "file": "*.js",
+     "ms": 2
+    },
+    {
+     "tool": "slow_glob",
+     "file": "src|.js",
+     "ms": 2025
+    },
+    {
+     "tool": "slow_read",
+     "file": "add.js",
+     "ms": 11
+    },
+    {
+     "tool": "slow_read",
+     "file": "mul.js",
+     "ms": 12
+    },
+    {
+     "tool": "slow_read",
+     "file": "sub.js",
+     "ms": 11
+    },
+    {
+     "tool": "slow_read",
+     "file": "format.js",
+     "ms": 11
+    },
+    {
+     "tool": "slow_read",
+     "file": "package.json",
+     "ms": 2016
+    },
+    {
+     "tool": "slow_read",
+     "file": "package.json",
+     "ms": 4
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 2
+  },
+  {
+   "mode": "off",
+   "wallMs": 27960,
+   "toolTotalMs": 12096,
+   "toolSpanMs": 12152,
+   "maxBatch": 5,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "glob",
+     "file": "*.js",
+     "ms": 4
+    },
+    {
+     "tool": "slow_glob",
+     "file": "src|.js",
+     "ms": 2016
+    },
+    {
+     "tool": "slow_read",
+     "file": "add.js",
+     "ms": 2014
+    },
+    {
+     "tool": "slow_read",
+     "file": "mul.js",
+     "ms": 2016
+    },
+    {
+     "tool": "slow_read",
+     "file": "sub.js",
+     "ms": 2015
+    },
+    {
+     "tool": "slow_read",
+     "file": "format.js",
+     "ms": 2016
+    },
+    {
+     "tool": "slow_read",
+     "file": "package.json",
+     "ms": 2015
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 3
+  },
+  {
+   "mode": "on",
+   "wallMs": 38238,
+   "toolTotalMs": 4107,
+   "toolSpanMs": 21217,
+   "maxBatch": 4,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "glob",
+     "file": "*.js",
+     "ms": 5
+    },
+    {
+     "tool": "slow_read",
+     "file": "package.json",
+     "ms": 2016
+    },
+    {
+     "tool": "slow_glob",
+     "file": "src|.js",
+     "ms": 2017
+    },
+    {
+     "tool": "slow_read",
+     "file": "add.js",
+     "ms": 16
+    },
+    {
+     "tool": "slow_read",
+     "file": "mul.js",
+     "ms": 16
+    },
+    {
+     "tool": "slow_read",
+     "file": "sub.js",
+     "ms": 15
+    },
+    {
+     "tool": "slow_read",
+     "file": "format.js",
+     "ms": 16
+    },
+    {
+     "tool": "slow_read",
+     "file": "package.json",
+     "ms": 6
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 3
+  },
+  {
+   "mode": "off",
+   "wallMs": 34107,
+   "toolTotalMs": 12110,
+   "toolSpanMs": 18792,
+   "maxBatch": 4,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "glob",
+     "file": "*.js",
+     "ms": 1
+    },
+    {
+     "tool": "slow_glob",
+     "file": "src|.js",
+     "ms": 2015
+    },
+    {
+     "tool": "slow_read",
+     "file": "add.js",
+     "ms": 2018
+    },
+    {
+     "tool": "slow_read",
+     "file": "mul.js",
+     "ms": 2018
+    },
+    {
+     "tool": "slow_read",
+     "file": "sub.js",
+     "ms": 2018
+    },
+    {
+     "tool": "slow_read",
+     "file": "format.js",
+     "ms": 2017
+    },
+    {
+     "tool": "slow_read",
+     "file": "package.json",
+     "ms": 2023
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 4
+  },
+  {
+   "mode": "on",
+   "wallMs": 23947,
+   "toolTotalMs": 4085,
+   "toolSpanMs": 13243,
+   "maxBatch": 4,
+   "pass": true,
+   "exitCode": 0,
+   "calls": [
+    {
+     "tool": "glob",
+     "file": "*.js",
+     "ms": 2
+    },
+    {
+     "tool": "read",
+     "file": "package.json",
+     "ms": 0
+    },
+    {
+     "tool": "slow_glob",
+     "file": "src|.js",
+     "ms": 2020
+    },
+    {
+     "tool": "slow_read",
+     "file": "package.json",
+     "ms": 2021
+    },
+    {
+     "tool": "slow_read",
+     "file": "add.js",
+     "ms": 10
+    },
+    {
+     "tool": "slow_read",
+     "file": "mul.js",
+     "ms": 10
+    },
+    {
+     "tool": "slow_read",
+     "file": "sub.js",
+     "ms": 9
+    },
+    {
+     "tool": "slow_read",
+     "file": "format.js",
+     "ms": 9
+    },
+    {
+     "tool": "slow_read",
+     "file": "package.json",
+     "ms": 4
+    }
+   ],
+   "stderrTail": "dsh: warning: 4 entries did not activate\nweb-search-deepseek (@deepseek-ai/dsh-web-search-deepseek): pending (waiting for service: web)\nweb-deepseek-api (@deepseek-ai/dsh-web-deepseek-api): pending (waiting for service: web)\nweb-fetch-http (@deepseek-ai/dsh-web-fetch-http): pending (waiting for service: web)\ntool-web (@deepseek-ai/dsh-tool-web): pending (waiting for service: web)",
+   "round": 4
+  }
+ ]
+}
