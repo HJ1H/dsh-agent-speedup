@@ -59,6 +59,32 @@ Same task, plugin off versus on, three runs per cell, median wall time.
 | sensenova-6.8-flash-lite (free tier) | T4: 3 reads, one repeated | 32.2 s | 25.4 s | −21% |
 | sensenova-6.8-flash-lite (free tier) | T5: glob + 4 reads | 22.9 s | 22.8 s | −0.4% |
 
+### Five-run pairs (0.2.2, per-call timings)
+
+The tables above report wall time, which mixes in model latency. The runs below add the per-tool
+measurement that makes the mechanism visible: every `slow_read` carries a fixed 2 s delay, so a
+long bar is a real wait and a short bar is a call that never executed.
+
+`sensenova-6.8-flash-lite`, 5 runs per cell, median:
+
+| Task | Metric | Off | On | Δ |
+|---|---|---|---|---|
+| T4 (3 reads, one repeated) | wall | 31.84 s | 22.82 s | −28.3% |
+| T4 | tool time total | 6048 ms | 4045 ms | −33.1% |
+| T5 (glob + 4 reads) | wall | 23.57 s | 18.30 s | −22.3% |
+| T5 | tool time total | 10084 ms | 2065 ms | **−79.5%** |
+| T5 | single call, median | 2016 ms | 11 ms | **−99.5%** |
+
+Per-run detail (all five runs, T5): every prefetched read came in at 9–13 ms while the un-prefetched
+`slow_glob` stayed at 2015–2027 ms. There were no misses in this set.
+
+T4 has two shapes and both work, which is worth stating because they look different:
+
+- **Serial (3 of 5 runs):** the third read hit the cache — 2023 ms → **7 ms**.
+- **Parallel (2 of 5 runs):** the model issued all three reads at once. In-flight coalescing merged
+  them into a single execution, so all three calls cost ~2020 ms but they **overlapped**: the three
+  reads span 2027 ms in total, not 6 s.
+
 Mechanism-level confirmation, independent of wall time:
 
 - T4: every run recorded exactly one `cache-hit` with `avoidedMs ≈ 2006` — the 2 s instrument delay

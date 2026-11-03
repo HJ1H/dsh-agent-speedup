@@ -19,10 +19,10 @@ Within that 22%, three different problems exist, and each capability targets one
 
 | Capability | Problem it solves | Measured |
 |---|---|---|
-| **Cache** | Same read-only call repeated | wall **−13.5%** (T4) and **−10.5%** (T5), release build; an earlier calibration on the same task shape measured **−46%** |
-| **In-flight merge** | The same call repeated *inside one parallel batch* | real dsh run: 3 simultaneous reads of 2 files → 1 dispatch instead of 3 |
-| **Prefetch** | Files the model will ask for right after a `glob` | real dsh run: 3 prefetches, 3 subsequent hits, ~6 s of 2 s-per-call tool time avoided in one turn |
-| **Shell concurrency** | Multiple readonly shell commands serialized | 4 pwsh calls: **7,103 ms serialized → 317 ms concurrent (22×)**, identical task and model |
+| **Cache** | Same read-only call repeated | repeated read **2023 ms → 7 ms** (serial runs, 5-run pair) |
+| **In-flight merge** | The same call repeated inside one parallel batch | 3 simultaneous reads span **2027 ms total**, not 6 s |
+| **Prefetch** | Files the model will ask for right after a `glob` | tool time **10 084 ms → 2 065 ms (−79.5%)**; per-read median **2016 ms → 11 ms** |
+| **Shell concurrency** | Multiple readonly shell commands serialized | 4 pwsh calls: **7 103 ms → 317 ms (22×)** |
 
 And two things it deliberately does not fix: on local millisecond-scale tools the plugin is
 invisible (tools were 0.1–9.4% of wall in our runs), and DeepSeek Harness already parallel-batches
@@ -170,10 +170,10 @@ service is not mounted. If the fingerprint cannot be taken at all, the entry is 
 
 给 DeepSeek Harness 用的工具执行效率套件，三个能力各自对应一类可实测的问题：
 
-- **缓存**：只读工具重复调用直接命中（真实 dsh 端到端实测：2 次 miss + 1 次 hit）
-- **在途合并**：同一个并行批里重复的调用只执行一次（实测 3 个并发重复读 → 1 次真实执行）
-- **预取**：`glob` 之后预读文件，模型开口时结果已在（实测 3 次预取 + 3 次命中，
-  单轮避免约 6 秒的 2 秒/次工具耗时）
+- **缓存**：只读工具重复调用直接命中（5 次配对实测：串行场景第三次读 2023ms → 7ms）
+- **在途合并**：同一个并行批里重复的调用只执行一次（3 个并发读总跨度 2027ms，而非 6 秒）
+- **预取**：`glob` 之后预读文件，模型开口时结果已在（工具总耗时 10.08s → 2.07s，−79.5%；
+  单次读取中位 2016ms → 11ms，−99.5%）
 - **只读 shell 并发**：dsh 原生会把 shell 命令串行（实测 4 条毫秒级命令串行 7.1 秒，
   开启后 317 毫秒完成，22 倍），本插件给只读命令打上并发标记，
   让它们进入 dsh 原生并行批（默认关闭，需显式开启）

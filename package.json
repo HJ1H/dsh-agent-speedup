@@ -19,6 +19,7 @@
     "lib/util/classify-command.js",
     "cordis.patch.yml",
     "docs/BENCHMARK.md",
+    "docs/evidence-0.2.2.json",
     "README.md",
     "LICENSE"
   ],

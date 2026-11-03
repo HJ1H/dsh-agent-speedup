@@ -45,6 +45,8 @@ function makeCtx() {
     has(event) {
       return (handlers.get(event) ?? []).length > 0;
     },
+    /** 直接取某事件的处理器，供需要手动控制并发的测试使用 */
+    __handlers: handlers,
   };
   return ctx;
 }
@@ -400,5 +402,35 @@ describe("推测预取", () => {
     await ctx.fire("tools/post-execute", { name: "glob" }, { files: ["node_modules/x.js", "bench/fixture/ok.js"] });
     await new Promise((r) => setTimeout(r, 20));
     assert.deepEqual(launched, ["bench/fixture/ok.js"]);
+  });
+
+  test("预取在途时到达的真实调用会等待同一执行，而不是重跑（zen T5 r2 竞态回归）", async () => {
+    // 实测场景：模型在 glob 后 1.93 s 发出 read，预取（2 s）还差 70 ms 没完成，
+    // 于是四个 read 全部重跑，工具总耗时从 2 ms 变成 8 s。
+    const ctx = makeCtx();
+    let dispatches = 0;
+    let release;
+    const gate = new Promise((r) => { release = r; });
+    ctx.tools.execute = async () => {
+      dispatches++;
+      await gate;
+      return { content: [{ type: "text", text: "prefetched" }] };
+    };
+    apply(ctx, cfgOf({ speculate: true }));
+
+    // 触发预取（不等待它完成）
+    await ctx.fire("tools/post-execute", { name: "glob" }, { files: ["bench/fixture/a.js"] });
+    await new Promise((r) => setTimeout(r, 10));
+    assert.equal(dispatches, 1, "预取应已启动");
+
+    // 预取还在跑时，真实调用到达同一文件（同一插件实例的 tools/execute 处理器）
+    const execHandler = ctx.__handlers.get("tools/execute")[0];
+    let realDispatches = 0;
+    const realNext = async () => { realDispatches++; return { content: [{ type: "text", text: "real" }] }; };
+    const pendingReal = execHandler({ name: "read", arguments: { file_path: "bench/fixture/a.js" } }, realNext);
+    await new Promise((r) => setTimeout(r, 20));
+    release();
+    await pendingReal;
+    assert.equal(realDispatches, 0, `真实调用不应重跑（实际 ${realDispatches} 次）`);
   });
 });
