@@ -20,7 +20,8 @@ Within that 22%, three different problems exist, and each capability targets one
 | Capability | Problem it solves | Measured |
 |---|---|---|
 | **Cache** | Same read-only call repeated | wall **−13.5%** (T4) and **−10.5%** (T5), release build; an earlier calibration on the same task shape measured **−46%** |
-| **Prefetch** | Files the model will ask for right after a `glob` | 4/4 files launched per trigger, the model's following reads served from cache (ledger: 14 hits, 28.1 s of instrumented execution avoided across 6 runs) |
+| **In-flight merge** | The same call repeated *inside one parallel batch* | real dsh run: 3 simultaneous reads of 2 files → 1 dispatch instead of 3 |
+| **Prefetch** | Files the model will ask for right after a `glob` | real dsh run: 3 prefetches, 3 subsequent hits, ~6 s of 2 s-per-call tool time avoided in one turn |
 | **Shell concurrency** | Multiple readonly shell commands serialized | 4 pwsh calls: **7,103 ms serialized → 317 ms concurrent (22×)**, identical task and model |
 
 And two things it deliberately does not fix: on local millisecond-scale tools the plugin is
@@ -63,8 +64,17 @@ any means invalidates — including `bash`/`pwsh` writes, which emit no filesyst
 
 Relative paths resolve against the **agent's session working directory**, the same base dsh's own
 `read` uses, so an agent that `cd`s elsewhere cannot collide with a same-named file elsewhere.
-The cache is an LRU bounded by `maxEntries` (default 512) and a result whose file changed *during*
+The cache is an LRU bounded by `maxEntries` (default 512), and a result whose file changed *during*
 the read is not stored.
+
+**In-flight coalescing.** dsh dispatches a turn's read-only calls in one parallel batch. A batch
+containing the same call twice would miss the cache both times, because neither has finished. Calls
+that arrive while an identical call is still running share that execution instead of repeating it —
+this covers the parallel case the cache alone cannot.
+
+Tool names are matched literally. `read`, `glob`, `grep` and `read_image` are built in; any custom
+or MCP tool you want cached must be listed in `readonlyTools` (and in `speculateOn` if its results
+should trigger prefetch). Unknown names are never assumed safe.
 
 ### Prefetch
 
@@ -153,8 +163,10 @@ service is not mounted. If the fingerprint cannot be taken at all, the entry is 
 
 给 DeepSeek Harness 用的工具执行效率套件，三个能力各自对应一类可实测的问题：
 
-- **缓存**：只读工具重复调用直接命中（发布候选回归实测免掉 28 秒真实执行 / 6 轮）
-- **预取**：`glob` 之后预读文件，模型开口时结果已在（实测 12/12 预取完成、结果全部从缓存供给）
+- **缓存**：只读工具重复调用直接命中（真实 dsh 端到端实测：2 次 miss + 1 次 hit）
+- **在途合并**：同一个并行批里重复的调用只执行一次（实测 3 个并发重复读 → 1 次真实执行）
+- **预取**：`glob` 之后预读文件，模型开口时结果已在（实测 3 次预取 + 3 次命中，
+  单轮避免约 6 秒的 2 秒/次工具耗时）
 - **只读 shell 并发**：dsh 原生会把 shell 命令串行（实测 4 条毫秒级命令串行 7.1 秒，
   开启后 317 毫秒完成，22 倍），本插件给只读命令打上并发标记，
   让它们进入 dsh 原生并行批（默认关闭，需显式开启）

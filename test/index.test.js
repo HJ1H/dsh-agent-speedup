@@ -324,6 +324,38 @@ describe("缓存语义", () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  test("同一批并发重复读只真实执行一次（在途合并，E2E 发现）", async () => {
+    // dsh 把同一批只读调用并行发出：三次 read 同时进入 execute，
+    // 此时缓存还没有任何条目（第一个还没执行完）。若不做在途合并，
+    // 三个都会真实 dispatch——这正是实测 T2 出现 3 次 miss 的原因。
+    const dir = mkdtempSync(join(tmpdir(), "dsh-inflight-"));
+    const file = join(dir, "same.js");
+    try {
+      writeFileSync(file, "content");
+      const ctx = makeCtx();
+      const execHandlers = [];
+      const rawOn = ctx.on;
+      ctx.on = (ev, fn) => { if (ev === "tools/execute") execHandlers.push(fn); else rawOn.call(ctx, ev, fn); };
+      apply(ctx, cfgOf({}));
+      const h = execHandlers[0];
+      const exec = { name: "read", arguments: { file_path: file } };
+
+      let dispatches = 0;
+      const slowNext = async () => {
+        dispatches++;
+        await new Promise((r) => setTimeout(r, 15));
+        return { content: [{ type: "text", text: "content" }] };
+      };
+      // 三个并发调用（不 await 中间结果）
+      const [a, b, c] = await Promise.all([h(exec, slowNext), h(exec, slowNext), h(exec, slowNext)]);
+      assert.equal(dispatches, 1, `并发重复读应只 dispatch 一次，实际 ${dispatches}`);
+      assert.deepEqual(a, b, "并发调用应拿到同一份结果");
+      assert.deepEqual(b, c);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("推测预取", () => {

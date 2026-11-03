@@ -100,6 +100,38 @@ has to agree with the model's argument formatting, and models differ.
 - Side-effecting tools are out of scope entirely: no dry-run rewriting, no overlay commit, no
   speculative `bash`.
 
+## 0.2.2 end-to-end verification (real dsh, not synthetic)
+
+Both runs below are real `dsh headless` turns against the bundled fixture, with the plugin mounted
+through a patch file and its debug ledger captured.
+
+**T2 — repeated read.** 3 model reads of 2 files, serial execution: ledger recorded 2 `cache-miss`
+and 1 `cache-hit` (`avoidedMs: 3`). An earlier run of the same task had the model issue all three
+reads in one parallel batch and produced 3 misses — see the next point.
+
+**T5 — slow tools (2 s instrument).** `slow_glob` launched 3 prefetches; the model's following
+three `slow_read` calls all hit (`speculative: true`, `avoidedMs ≈ 2013` each), and a fourth read of
+a non-prefetched file cost the full 2 s. Ledger: `{cache-miss: 5, spec-start: 3, spec-done: 3,
+cache-hit: 3}` — about 6 s of instrumented execution avoided in one turn.
+
+### What the E2E run changed
+
+The first T2 run showed the plugin doing nothing, and the reason was not a bug in the cache: dsh
+dispatches a turn's read-only calls **in one parallel batch**, so the second and third reads queried
+the cache before the first had finished and all three went to disk. Caching alone cannot serve a
+batch of simultaneous duplicates.
+
+0.2.2 adds **in-flight coalescing**: concurrent calls with the same key share one dispatch
+(`cache-coalesced` in the ledger). Serial repeats hit the cache; parallel repeats of the same call
+collapse into one execution. Both shapes have regression tests.
+
+### Custom tool names need configuration
+
+T5 initially produced no events at all because it uses `slow_read`/`slow_glob` while the defaults
+name only `read`/`glob`/`grep`/`read_image`. Custom and MCP tool names must be added to
+`readonlyTools` and `speculateOn` explicitly. This is by design — silently treating an unknown tool
+as read-only would be unsafe — but it is the first thing to check if the ledger stays empty.
+
 ## Prior art
 
 [PASTE](https://arxiv.org/abs/2603.18897) ·
