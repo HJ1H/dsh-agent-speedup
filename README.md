@@ -19,10 +19,14 @@ Within that 22%, three different problems exist, and each capability targets one
 
 | Capability | Problem it solves | Measured |
 |---|---|---|
-| **Cache** | Same read-only call repeated | repeated read **2023 ms → 7 ms** (serial runs, 5-run pair) |
+| **Cache** | Same read-only call repeated | repeated read **2023 ms → 7 ms** (serial runs) |
 | **In-flight merge** | The same call repeated inside one parallel batch | 3 simultaneous reads span **2027 ms total**, not 6 s |
-| **Prefetch** | Files the model will ask for right after a `glob` | tool time **10 084 ms → 2 065 ms (−79.5%)**; per-read median **2016 ms → 11 ms** |
-| **Shell concurrency** | Multiple readonly shell commands serialized | 4 pwsh calls: **7 103 ms → 317 ms (22×)** |
+| **Prefetch** | Files the model will ask for right after a `glob` | tool time **10.08 s → 2.07 s (−79.4%)**; per-read median **2016 ms → 11 ms** |
+| **Shell concurrency** | Multiple readonly shell commands serialized | window **13.81 s → 4.65 s (−66.3%)**, 4/4 commands in one batch |
+
+Caching and scheduling are measured separately, on purpose. The concurrency figure above comes from a
+run with `cache: false, speculate: false` — nothing but scheduling is changed. Full method, paired
+confidence intervals and the metric caveats: [docs/BENCHMARK.md](docs/BENCHMARK.md).
 
 And two things it deliberately does not fix: on local millisecond-scale tools the plugin is
 invisible (tools were 0.1–9.4% of wall in our runs), and DeepSeek Harness already parallel-batches
@@ -174,9 +178,9 @@ service is not mounted. If the fingerprint cannot be taken at all, the entry is 
 - **在途合并**：同一个并行批里重复的调用只执行一次（3 个并发读总跨度 2027ms，而非 6 秒）
 - **预取**：`glob` 之后预读文件，模型开口时结果已在（工具总耗时 10.08s → 2.07s，−79.5%；
   单次读取中位 2016ms → 11ms，−99.5%）
-- **只读 shell 并发**：dsh 原生会把 shell 命令串行（实测 4 条毫秒级命令串行 7.1 秒，
-  开启后 317 毫秒完成，22 倍），本插件给只读命令打上并发标记，
-  让它们进入 dsh 原生并行批（默认关闭，需显式开启）
+- **只读 shell 并发**：dsh 原生会把 shell 命令串行（4 条只读命令串行 13.81 秒，
+  开启后工具窗口 4.65 秒，−66.3%，且 4/4 进入同一并行批）。默认关闭，需显式开启。
+  这条数据来自 `cache: false, speculate: false` 的隔离运行——只有调度，不含缓存。
 - **判定粒度**：按子命令和参数判定，不按程序名放行——`git branch`（列举）只读、
   `git branch new`（创建）不是；`find -print` 放行、`-fprint/-exec/-delete` 拒绝。
   命令替换、`${VAR}`、转义元字符、`NAME=value cmd` 赋值前缀、PowerShell 脚本块

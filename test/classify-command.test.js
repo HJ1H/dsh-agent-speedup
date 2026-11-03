@@ -174,6 +174,13 @@ describe("R2 修复后只读形态仍然放行", () => {
     'grep ">" f.txt',
     "grep '>' f.txt",
     "grep 'a\\|b' f.txt",
+    // 筛选类 cmdlet 无脚本块时安全（曾因白名单缺失被误拒，导致并发判定失效）
+    "Select-Object -First 3",
+    "Get-Process | Select-Object -First 3",
+    "Get-ChildItem | Select-Object Name",
+    "Sort-Object Name",
+    "Measure-Object",
+    "Where-Object Name -eq x",
   ];
   for (const c of reads) {
     test(c, () => assert.equal(classifyCommand(c).readonly, true, `误拒只读: ${c} (${classifyCommand(c).reason})`));

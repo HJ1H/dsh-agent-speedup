@@ -110,6 +110,42 @@ honest estimate of user-visible gain on this workload: **about 11%, not 80%**.
 
 Raw per-call durations for all 24 runs: [paired-bench.json](paired-bench.json).
 
+### Twelve-round paired run: shell concurrency (scheduling, not caching)
+
+The T4/T5 runs above measure caching and prefetch. This one isolates **scheduling**: caching and
+prefetch are explicitly switched off, and only `shellConcurrency` is enabled. The task issues four
+readonly `pwsh` commands in one batch — each pays a real ~2.2 s PowerShell startup on Windows, so
+serial dispatch means four startups back to back.
+
+`sensenova-6.8-flash-lite`, T6, 12 rounds, alternating off/on:
+
+| Metric | Off | On | Δ |
+|---|---|---|---|
+| **Tool window span** | 13.81 s ± 0.36 | **4.65 s ± 0.12** | **−66.3%** |
+| Wall time | 28.71 s ± 1.92 | 20.51 s ± 1.22 | −28.6% |
+| Max concurrent batch | 1 | 4 | — |
+| Sum of individual call times | 13.81 s | 17.80 s | **+28.9%** |
+| Task success | 12 / 12 | 12 / 12 | — |
+
+Paired differences on window span: **−9.16 s, 95% CI [−9.35, −8.97]**, all 12 negative
+(Cohen's d = −30.3). Raw data: [paired-shell-bench.json](paired-shell-bench.json).
+
+**Why the sum of call times goes up.** Under serial dispatch the four calls never overlap, so the sum
+equals the window. Running them concurrently makes all four PowerShell processes start at once; each
+is slower individually (startup contention) but they overlap, so the *window* — the part the user
+actually waits for — shrinks by two thirds. Reporting "total tool time" for a concurrency change
+would be actively misleading; the window is the right metric.
+
+**What this does and does not show.** It shows the classifier correctly admitted all four read-only
+commands and the host actually placed them in one parallel batch. It does not show a gain on
+millisecond-scale tools: with no startup cost to overlap, batching saves almost nothing, which is why
+the capability is off by default and documented as risky.
+
+Regression note: preparing this benchmark exposed a real defect — `Select-Object -First 3` was
+rejected by the classifier (the cmdlet had been dropped from the whitelist during the script-block
+hardening, with no parameter-level rule to replace it). It was one of the four commands in this task,
+which is why the first smoke run showed a max batch of 3, not 4. Fixed and covered by tests.
+
 Mechanism-level confirmation, independent of wall time:
 
 - T4: every run recorded exactly one `cache-hit` with `avoidedMs ≈ 2006` — the 2 s instrument delay
