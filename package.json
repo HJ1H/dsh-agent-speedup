@@ -23,7 +23,11 @@
     "docs/paired-bench.json",
     "docs/paired-shell-bench.json",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "docs/paired-cache-bench-zen.json",
+    "docs/paired-shell-bench-zen-v2.json",
+    "docs/paired-explore-bench-zen.json",
+    "docs/paired-shell-bench-zen.json"
   ],
   "keywords": [
     "dsh",
