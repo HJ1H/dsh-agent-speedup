@@ -331,20 +331,53 @@ regression test now drives the real loop — it fails without the fix and passes
 (`~/.dsh/profiles/headless/node_modules/dsh-agent-speedup`), not the working tree, so source edits
 had no effect until synced. Every number in this document was produced through that profile.
 
-Corrected T5 numbers on `deepseek-v4.1-flash` (4 paired rounds, all on-arm runs pass):
+Corrected T5 numbers on `deepseek-v4.1-flash` (8 paired rounds, all on-arm runs pass):
 
 | Metric | Off | On | Δ |
 |---|---|---|---|
-| **Tool total** | 10.08 s ± 0.03 | **2.35 s ± 0.55** | **−76.7%** |
-| Cache hits | 0 / 20 | 17 / 25 | 68% hit rate |
-| Median call | 2014 ms | 13 ms | −99.4% |
-| Task success | 4 / 4 | 4 / 4 | — |
+| **Tool total** | 10.11 s ± 0.03 | **2.12 s ± 0.08** | **−79.0%** |
+| Tool window span | 9.31 s ± 3.60 | **5.45 s ± 0.94** | −41.5% |
+| Wall time | 18.96 s ± 3.92 | 15.43 s ± 2.63 | −18.6% |
+| Cache hits | 0 / 40 | 28 / 40 | 70% hit rate |
+| Median call | 2022 ms | 18 ms | −99.1% |
+| Task success | 8 / 8 | 8 / 8 | — |
 
-Paired total-tool difference: **−7.73 s, 95% CI [−8.63, −6.84]**, all 4 negative (Cohen's d = −13.8).
-One on-arm round (r4) issued a redundant `pwsh` probe and re-read the files, which is why its tool
-total (3.18 s) is higher than the other three (≈2.07 s); it still passed and is included rather than
-dropped.
+Paired total-tool difference: **−7.99 s, 95% CI [−8.05, −7.92]**, all 8 negative (Cohen's d = −103).
+That effect size looks absurd because the off-arm is a *fixed* 2 s × 5 calls with near-zero variance
+(sd 0.03 s); the meaningful reading is the paired difference and its interval, not the standardized
+effect. Wall time moves far less than tool time because model latency dominates it, exactly as the
+sensenova runs showed.
+
+One on-arm round (r8) reported 0 hits — the model issued its reads before the prefetch had finished.
+It still passed, and it is kept in the sample rather than dropped.
+
 
 Supporting T6 re-run on the same fixed build (4 rounds): tool window **9.68 s → 3.20 s (−66.9%)**,
 paired −6.47 s, 95% CI [−7.37, −5.58], all 4 negative, max batch 1 → 4.
+
+### Which plugin version produced which number
+
+The deadlock existed only in builds that registered prefetch promises in `inflight` (commit
+`e18add2`, 19:52, shipped in 0.2.3/0.3.0) and only on the prefetch path. Audited after the fact:
+
+| Run | Local time | Loaded build | Deadlock applies | Status |
+|---|---|---|---|---|
+| T5 sensenova, 12 rounds | 20:21 | 0.2.0 (no `inflight`) | no | valid |
+| T6 sensenova, 12 rounds | 21:10 | 0.2.0 | no (no prefetch) | valid |
+| T6 zen, 6 rounds | 23:09 | 0.3.0 | no (no prefetch) | valid |
+| T5 zen, first attempt | 23:27 | 0.3.0 | **yes** | **discarded** |
+| T5 zen, 4 rounds | 23:55 | 0.3.1 | no | valid |
+| T6 zen, 4 rounds | 23:58 | 0.3.1 | no | valid |
+
+Two things made this easy to get wrong, both worth remembering:
+
+1. **The profile is the truth.** `dsh` loads from
+   `~/.dsh/profiles/headless/node_modules/dsh-agent-speedup`, not from this working tree. Editing
+   `lib/index.js` here changed nothing until the file was copied into the profile. Check
+   `git -C ~/.dsh/profiles/headless/node_modules/dsh-agent-speedup` or the installed
+   `package.json` version before trusting any measurement.
+2. **A test that mocks the dispatch path cannot see a dispatch-path deadlock.** The old prefetch
+   tests replaced `ctx.tools.execute` with a plain stub, so the re-entry never happened. The
+   replacement test lets the stub call the real handler, and is verified to fail without the fix.
+
 

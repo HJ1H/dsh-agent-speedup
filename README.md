@@ -28,6 +28,10 @@ Caching and scheduling are measured separately, on purpose. The concurrency figu
 run with `cache: false, speculate: false` — nothing but scheduling is changed. Full method, paired
 confidence intervals and the metric caveats: [docs/BENCHMARK.md](docs/BENCHMARK.md).
 
+Both effects replicate on a stronger model (`deepseek-v4.1-flash`): prefetch/cache **−79.0%** tool
+time with a 70% hit rate, scheduling **−66.9%** tool window. Same direction, same magnitude — the
+gain tracks the plugin, not the model.
+
 And two things it deliberately does not fix: on local millisecond-scale tools the plugin is
 invisible (tools were 0.1–9.4% of wall in our runs), and DeepSeek Harness already parallel-batches
 concurrency-safe tools — in our baseline 7 tool calls (6 reads + 1 shell) were dispatched within
@@ -189,6 +193,9 @@ service is not mounted. If the fingerprint cannot be taken at all, the entry is 
 前提要清楚：模型延迟占关键路径的 87%，工具占 22%。本地毫秒级工具上这个插件无感；
 收益集中在"慢工具 + 重复调用"场景。数字、方法和反面结果在
 [docs/BENCHMARK.md](docs/BENCHMARK.md)。
+
+换到更强的模型（`deepseek-v4.1-flash`）结果同向同量级：缓存/预取工具耗时 −79.0%（命中率
+70%），调度工具窗口 −66.9%。说明收益来自插件而不是特定模型的波动。
 
 **配置覆盖是整体替换不是合并**——覆盖一个字段时请把要的字段全部写上。
 
