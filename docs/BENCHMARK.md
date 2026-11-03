@@ -260,3 +260,24 @@ it changes what a substitution certificate can claim about physical execution.
 selector, fallback and recovery. Our ledger measures avoided instrumented execution time and cache
 hit counts; we do not price our own overhead the same way, so the two efficiency figures are not
 comparable and this document does not compare them.
+
+## Benchmarks we tried and rejected (2026-11-03)
+
+Recorded so this is not re-litigated. Full detail: `promo/BENCHMARK-SELECTION.md`.
+
+**HumanEval / MBPP** are unsuitable: each task is "write one pure function", with 0–2 tool calls
+and almost no repeated reads. The cache, prefetch and concurrency paths never fire, so toggling the
+plugin produces identical output. (HarnessMM can use them because it removes *reasoning* calls, a
+different mechanism.)
+
+**SWE-bench** is the right shape — real repositories, tens of tool calls, repeated reads — but
+the free-tier API could not run it:
+
+- `psf__requests-6028` was blocked outright by the provider's content filter
+  (`400 safety check failed`), zero tool calls in both arms.
+- `psf__requests-2931` ran, but off hit the 240 s timeout after 28 tool calls while on finished in
+  14 s after 3 — the model gave up rather than completing the task. Not a valid comparison.
+
+**Model availability at the time of writing**: `sensenova-6.8-flash` works (1.2–2.4 s, 4 concurrent
+OK); `deepseek-v4-flash` returned 429 (TPM/RPM) and `deepseek-v4.1-flash` returned 403 (not in
+plan). SWE-bench needs a stronger, rate-limit-free model before it can be used here.
