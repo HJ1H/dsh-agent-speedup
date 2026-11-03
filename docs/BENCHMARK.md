@@ -406,5 +406,29 @@ This is the honest boundary of the whole project, and it is the reason the promo
 claims tool-time reduction: **on a task where the model wanders, saving tool time does not make the
 task finish sooner.** T8 is kept in the repo as the counter-example rather than dropped.
 
+### Long-run demonstration: a 694-call audit task, 20.5 min → 7.6 min
+
+The arena demo (`promo/arena/`) runs the same prompt on both arms with instrumented tools (2 s
+delayed `slow_read`/`slow_glob` standing in for remote/MCP-scale tools; real `pwsh` for per-file
+stats). A synthetic codebase of 320 modules, five phases, one paired run:
+
+| | Off (stock) | On (plugin) |
+|---|---|---|
+| **Wall clock** | **20.55 min** | **7.58 min (−63.1%)** |
+| Tool window span | 19.8 min | 7.1 min (−64.2%) |
+| Read time (359 calls) | 726 s (2023 ms median) | 13 s (19 ms median, −98.2%) |
+| Shell (321 calls) | serialized, 505 s sum | parallel batches (widest 32), span-compressed |
+| Tool calls | 694 | 695 |
+| Task passed | ✓ | ✓ |
+
+`promo/arena/` has the exact composition; raw event timelines in `results/arena/`. Caveats, stated
+plainly: this is **one paired run, not an 8-round protocol**; the reads are slow because the
+instrument says so (real local reads are milliseconds — see the scope section above); the shell
+serialization on the off-arm is genuine stock-harness behavior, which is the actual product claim
+being demonstrated. At this task length tool time dominates the critical path, which is why the
+wall-clock reduction (−63%) finally approaches the tool reduction — the opposite of the T8 lesson,
+and the reason the demo exists: task length is a variable the user controls.
+
+
 
 
