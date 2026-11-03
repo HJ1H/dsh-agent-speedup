@@ -308,3 +308,43 @@ from the provider, mid-session. The same prompts pass in isolation, so it appear
 context-accumulation in long tool-heavy sessions rather than anything the plugin does. Retries
 recovered; the 6 reported rounds are all clean runs. Worth knowing that a long shell-heavy session
 can be interrupted by the provider regardless of this plugin.
+
+### Regression found and fixed after the first zen T5 attempt (0.3.1)
+
+The first attempt to measure T5 (cache + prefetch) on zen produced on-arm runs with **one tool call
+and an empty final answer**. It was not the model and not the provider.
+
+**Cause: the plugin deadlocked against itself.** `prefetch()` dispatches through
+`ctx.tools.execute()`, which re-enters the plugin's own `tools/execute` handler; that handler found
+the prefetch's own promise registered in `inflight` and awaited it — waiting on itself forever. The
+four real `slow_read` calls then coalesced onto that never-settling promise. Every on-arm run hung
+until the harness timeout.
+
+This was introduced when in-flight coalescing was added, and the existing test did not catch it
+because it mocked `ctx.tools.execute` instead of letting it re-enter the handler.
+
+**Fix**: prefetch-dispatched calls are tagged with a `spec-` callId prefix and skip the `inflight`
+lookup (they still perform the real dispatch; the prefetch's own `then` owns the cache write). A
+regression test now drives the real loop — it fails without the fix and passes with it.
+
+**Also found**: the local benchmark profile was pinned to an npm-installed copy
+(`~/.dsh/profiles/headless/node_modules/dsh-agent-speedup`), not the working tree, so source edits
+had no effect until synced. Every number in this document was produced through that profile.
+
+Corrected T5 numbers on `deepseek-v4.1-flash` (4 paired rounds, all on-arm runs pass):
+
+| Metric | Off | On | Δ |
+|---|---|---|---|
+| **Tool total** | 10.08 s ± 0.03 | **2.35 s ± 0.55** | **−76.7%** |
+| Cache hits | 0 / 20 | 17 / 25 | 68% hit rate |
+| Median call | 2014 ms | 13 ms | −99.4% |
+| Task success | 4 / 4 | 4 / 4 | — |
+
+Paired total-tool difference: **−7.73 s, 95% CI [−8.63, −6.84]**, all 4 negative (Cohen's d = −13.8).
+One on-arm round (r4) issued a redundant `pwsh` probe and re-read the files, which is why its tool
+total (3.18 s) is higher than the other three (≈2.07 s); it still passed and is included rather than
+dropped.
+
+Supporting T6 re-run on the same fixed build (4 rounds): tool window **9.68 s → 3.20 s (−66.9%)**,
+paired −6.47 s, 95% CI [−7.37, −5.58], all 4 negative, max batch 1 → 4.
+

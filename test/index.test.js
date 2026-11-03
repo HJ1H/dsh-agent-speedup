@@ -433,4 +433,43 @@ describe("推测预取", () => {
     await pendingReal;
     assert.equal(realDispatches, 0, `真实调用不应重跑（实际 ${realDispatches} 次）`);
   });
+
+  test("预取自己发起的 dispatch 不得在 inflight 里等到自己（真实回环死锁回归）", async () => {
+    // 实测：prefetch() 用 ctx.tools.execute() 投递，该调用会重新进入本插件的
+    // tools/execute 处理器；处理器查 inflight 命中预取自己登记的 Promise，
+    // 于是 await 自己 → 永不结算。zen 与 sensenova 两组的 T5 on 臂都因此挂死。
+    //
+    // 这个测试跑的是真实回环：ctx.tools.execute 真的会回调处理器，而不是被 mock 掉。
+    const ctx = makeCtx();
+    const handlers = ctx.__handlers;
+    let dispatches = 0;
+    let settled = 0;
+
+    // 模拟 dsh：registry 的 execute 会穿过 tools/execute waterfall。
+    // 关键时序——真实 dsh 的 prepareExecution 是异步的，处理器在 prefetch()
+    // 完成 inflight.set 之后才被调用。若同步回调，处理器查表时 inflight 还是空的，
+    // 死锁就复现不出来（这个 mock 曾经因此让回归测试形同虚设）。
+    ctx.tools.execute = async (exec) => {
+      await new Promise((r) => setImmediate(r));
+      const handler = handlers.get("tools/execute")[0];
+      const out = await handler(exec, async () => {
+        dispatches++;
+        await new Promise((r) => setTimeout(r, 5));
+        return { content: [{ type: "text", text: "body" }] };
+      });
+      settled++;
+      return out;
+    };
+    apply(ctx, cfgOf({ speculate: true, readonlyTools: ["read"] }));
+
+    await ctx.fire("tools/post-execute", { name: "glob" }, { files: ["bench/fixture/a.js"] });
+
+    // 死锁时 preload 的 promise 永不结算：给 300ms 真实宽限期（正常只需 ~5ms）
+    const deadline = Date.now() + 300;
+    while (Date.now() < deadline && settled === 0) {
+      await new Promise((r) => setTimeout(r, 10));
+    }
+    assert.equal(settled, 1, "预取 dispatch 自等待：inflight 查表必须放过自发的 spec- 调用");
+    assert.equal(dispatches, 1, "预取应恰好真实 dispatch 一次");
+  });
 });
