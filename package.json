@@ -1,6 +1,6 @@
 {
   "name": "dsh-agent-speedup",
-  "version": "0.2.3",
+  "version": "0.2.5",
   "description": "Tool-execution efficiency suite for DeepSeek Harness: read-only result cache, speculative prefetch, and concurrent readonly shell commands. Honest scope: helps when tools are slow and calls repeat; model latency dominates otherwise.",
   "type": "module",
   "main": "lib/index.js",
@@ -20,6 +20,7 @@
     "cordis.patch.yml",
     "docs/BENCHMARK.md",
     "docs/evidence-0.2.2.json",
+    "docs/paired-bench.json",
     "README.md",
     "LICENSE"
   ],

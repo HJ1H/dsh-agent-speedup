@@ -85,6 +85,31 @@ T4 has two shapes and both work, which is worth stating because they look differ
   them into a single execution, so all three calls cost ~2020 ms but they **overlapped**: the three
   reads span 2027 ms in total, not 6 s.
 
+### Twelve-round paired run (0.2.2, drift-controlled)
+
+The naive design — run all "off" trials, then all "on" trials — cannot separate the effect from API
+drift, because first-token latency moves on a minutes scale. This run alternates A/B inside each
+round, so both arms share the same time window.
+
+`sensenova-6.8-flash-lite`, T5, 12 rounds, one `off` and one `on` trial per round:
+
+| Metric | Off | On | Δ |
+|---|---|---|---|
+| Tool time total (mean) | 10.08 s ± 0.03 | 2.07 s ± 0.04 | **−79.4%** |
+| Wall time (mean) | 17.79 s ± 0.72 | 15.87 s ± 0.84 | −10.8% |
+| Per-call median | 2016 ms | 11 ms | −99.5% |
+| Cache/prefetch hits | 0 / 60 calls | 48 / 60 calls | — |
+| Task success | 12 / 12 | 12 / 12 | — |
+
+Paired differences (each round's `on` minus its own `off`): tool time **−8.01 s, 95% CI
+[−8.04, −7.98]**, all 12 negative; wall time **−1.92 s, 95% CI [−2.58, −1.25]**, all 12 negative.
+
+The tool-time interval is ~60 ms wide because the instrument delay is fixed at 2 s by construction —
+that number measures the mechanism, not the world. The wall-time interval is ~1.3 s wide and is the
+honest estimate of user-visible gain on this workload: **about 11%, not 80%**.
+
+Raw per-call durations for all 24 runs: [paired-bench.json](paired-bench.json).
+
 Mechanism-level confirmation, independent of wall time:
 
 - T4: every run recorded exactly one `cache-hit` with `avoidedMs ≈ 2006` — the 2 s instrument delay
